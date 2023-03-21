@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+      "removeComments": false,
+      "target": "ES2015",
+      "module": "CommonJS",
+      "lib": ["ES2020"],
+      "declaration": true,
+      "declarationMap": true,
+      "sourceMap": true,
+      "outDir": "lib",
+      "strict": true,
+      "noImplicitAny": true,
+      "noImplicitReturns": false,
+      "strictFunctionTypes": true,
+      "strictNullChecks": true,
+      "allowSyntheticDefaultImports": true,
+      "moduleResolution": "node",
+      "esModuleInterop": true,
+      "forceConsistentCasingInFileNames": true,  /* Disallow inconsistently-cased references to the same file. */
+    },
+    "include": [
+      "src/**/*.ts",
+    ],
+    "exclude": [
+      "node_modules",
+      "lib"
+    ]
+  }
