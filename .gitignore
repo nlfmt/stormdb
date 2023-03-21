@@ -12,3 +12,6 @@ yarn.lock
 logs
 *.log
 npm-debug.log*
+
+# tarballs
+*.tgz
