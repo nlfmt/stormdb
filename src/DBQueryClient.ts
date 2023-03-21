@@ -7,12 +7,15 @@ import { FindQuery, InferModelDef, Predicate, UpdateQuery } from "./types";
 type QueryPart = Record<string | number | symbol, any>;
 type DocPart = Record<string | number | symbol, any>;
 type DBValue = number | bigint | string | boolean | null | object | undefined;
+type ToDocument<D extends Record<string, z.ZodSchema<any>>, M extends keyof D> = InferModelDef<D>[M];
+type NoId<T> = Omit<T, "_id">;
 
 
 /** A class that handles all queries for a specific model */
 export default class DBQueryClient<
     D extends Record<string, z.ZodSchema<any>>,
-    M extends keyof D
+    M extends keyof D,
+    Doc extends z.TypeOf<D[M]> & { _id: ObjectId; } = ToDocument<D, M>
 > {
     /** The name of the model this query client is for */
     private mdl: M;
@@ -34,21 +37,18 @@ export default class DBQueryClient<
      * @param obj The object to insert into the database
      * @returns The inserted document or null if the object is invalid
      */
-    create(obj: Omit<InferModelDef<D>[M], "_id">): InferModelDef<D>[M] | null {
-        const { mdl } = this;
-        const modelSchema = this.db.models[mdl];
-
+    create(obj: NoId<Doc>): Doc | null {
         // check if the object is valid
         try {
-            modelSchema.parse(obj);
+            this.schema.parse(obj);
         } catch (err) {
             console.error(err);
             return null;
         }
 
         // insert the object
-        const newObj = { ...obj, _id: new ObjectId() };
-        this.db.data[mdl]?.push(newObj);
+        const newObj = { ...obj, _id: new ObjectId() } as Doc;
+        this.docs.push(newObj);
 
         // save the database
         this.db.requestSave();
@@ -61,9 +61,9 @@ export default class DBQueryClient<
      * @param id The id of the document to find
      * @returns The document if found, null otherwise
      */
-    findById(id: ObjectId): InferModelDef<D>[M] | null {
-        const entry = this.db.data[this.mdl]?.find((e) => e._id.equals(id));
-        return entry ?? null;
+    findById(id: ObjectId): Readonly<Doc> | null {
+        const doc = this.docs.find((e) => e._id.equals(id));
+        return doc ?? null;
     }
 
     /**
@@ -71,8 +71,8 @@ export default class DBQueryClient<
      * @param query The query to find the document by
      * @returns The document if found, null otherwise
      */
-    find(where: FindQuery<InferModelDef<D>[M]>): InferModelDef<D>[M] | null {
-        const doc = this.db.data[this.mdl]?.find((d) =>
+    find(where: FindQuery<Doc>): Readonly<Doc> | null {
+        const doc = this.docs.find((d) =>
             this.matchQuery(d, where)
         );
 
@@ -84,21 +84,31 @@ export default class DBQueryClient<
      * @param query The query to find the documents by
      * @returns An array of documents that match the query
      */
-    findMany(where: FindQuery<InferModelDef<D>[M]> = {}): InferModelDef<D>[M][] {
-        const docs = this.db.data[this.mdl]?.filter((d) =>
+    findMany(where: FindQuery<Doc> = {}): Readonly<Doc>[] {
+        const docs = this.docs.filter((d) =>
             this.matchQuery(d, where)
         );
 
         return docs ?? [];
     }
 
-    // TODO: implement & document
+    /**
+     * Update a document in the database by its id
+     * @param id The id of the document to update
+     * @param to The UpdateQuery to update the document with
+     * @returns The updated document or null if the document wasn't found
+     */
     updateById(
         id: ObjectId,
-        to: UpdateQuery<InferModelDef<D>[M]>
-    ): InferModelDef<D>[M] | null {
+        to: UpdateQuery<Doc>
+    ): Readonly<Doc> | null {
+        const idx = this.docs.findIndex((e) => e._id.equals(id));
+        if (!idx || idx === -1) return null;
+
+        const doc = this.updateDoc(this.docs[idx], to);
         
-        return null;
+        this.db.requestSave();
+        return doc ?? null;
     }
 
     
@@ -109,25 +119,41 @@ export default class DBQueryClient<
      * @returns The updated document or null if the object is invalid
      * or the document was not found
      */
-    // TODO: implement
     update(
-        where: FindQuery<InferModelDef<D>[M]>,
-        to: UpdateQuery<InferModelDef<D>[M]>
-    ): InferModelDef<D>[M] | null {
-        return null;
+        where: FindQuery<Doc>,
+        to: UpdateQuery<Doc>
+    ): Readonly<Doc> | null {
+        
+        const idx = this.docs.findIndex((e) =>
+            this.matchQuery(e, where)
+        );
+        if (!idx || idx === -1) return null;
+
+        const doc = this.updateDoc(this.docs[idx], to);
+
+        this.db.requestSave();
+        return doc ?? null;
     }
 
-    // TODO: implement & document
+    /**
+     * Update multiple documents in the database
+     * @param where The query to find the documents to update
+     * @param to The UpdateQuery to update the documents with
+     * @returns An array of the updated documents
+     */
     updateMany(
-        where: FindQuery<InferModelDef<D>[M]> = {},
-        to: UpdateQuery<InferModelDef<D>[M]>
-    ): InferModelDef<D>[M][] {
-        const { mdl } = this;
+        where: FindQuery<Doc>,
+        to: UpdateQuery<Doc>
+    ): Readonly<Doc>[] {
+        const docs = this.docs.filter((d) =>
+            this.matchQuery(d, where)
+        );
 
-        return [];
+        for (const doc of docs) this.updateDoc(doc, to);
+
+        this.db.requestSave();
+        return docs ?? [];
     }
-
-
 
     /**
      * Delete a document from the database
@@ -135,26 +161,22 @@ export default class DBQueryClient<
      * @returns True if the document was deleted, false otherwise
      */
     deleteById(id: ObjectId): boolean {
-        const { mdl } = this;
-
-        const idx = this.db.data[this.mdl]?.findIndex((e) => e._id.equals(id));
+        const idx = this.docs.findIndex((e) => e._id.equals(id));
         if (!idx || idx === -1) return false;
 
-        this.db.data[mdl]?.splice(idx, 1);
+        this.docs.splice(idx, 1);
 
         this.db.requestSave();
         return true;
     }
 
-    delete(where: FindQuery<InferModelDef<D>[M]>): boolean {
-        const { mdl } = this;
-
-        const idx = this.db.data[this.mdl]?.findIndex((e) =>
+    delete(where: FindQuery<Doc>): boolean {
+        const idx = this.docs.findIndex((e) =>
             this.matchQuery(e, where)
         );
         if (!idx || idx === -1) return false;
 
-        this.db.data[mdl]?.splice(idx, 1);
+        this.docs.splice(idx, 1);
 
         this.db.requestSave();
         return true;
@@ -165,10 +187,8 @@ export default class DBQueryClient<
      * @param where The query to find the documents to delete
      * @returns The number of documents deleted
      */
-    deleteMany(where: FindQuery<InferModelDef<D>[M]> = {}): number {
-        const { mdl } = this;
-
-        const idxs = this.db.data[this.mdl]?.reduce<number[]>((acc, e, i) => {
+    deleteMany(where: FindQuery<Doc> = {}): number {
+        const idxs = this.docs.reduce<number[]>((acc, e, i) => {
             if (this.matchQuery(e, where)) acc.push(i);
             return acc;
         }, []);
@@ -176,11 +196,21 @@ export default class DBQueryClient<
         if (!idxs || idxs.length === 0) return 0;
 
         for (const idx of idxs) {
-            this.db.data[mdl]?.splice(idx, 1);
+            this.docs.splice(idx, 1);
         }
 
         this.db.requestSave();
         return idxs.length;
+    }
+
+    /** The Array of documents for this model */
+    private get docs(): Doc[] {
+        return (this.db.data[this.mdl] ?? []) as Doc[];
+    }
+
+    /** The Zod Schema for this Model */
+    private get schema(): D[M] {
+        return this.db.models[this.mdl];
     }
 
     /**
@@ -216,5 +246,49 @@ export default class DBQueryClient<
             }
         }
         return true;
+    }
+
+    /**
+     * Update a document with an update query
+     * @param doc The document to update
+     * @param to The update query to update the document with
+     */
+    private updateDoc(doc: DocPart, to: UpdateQuery<DocPart>): any {
+        
+        /*
+        * Check if to is an update function, if so, replace the doc with the result of the function
+        * otherwise, go through every key in the update query and update the corresponding key in the doc
+        * if the value is an object, recurse
+        */
+
+        if (typeof to === "function") {
+            const newDoc = to(doc);
+            if (newDoc) { // FIXME: probably redundant
+                for (const key in newDoc) {
+                    doc[key] = newDoc[key];
+                }
+            }
+        } else {
+            for (const key in to) {
+                const updateValue = to[key] as DBValue | UpdateQuery<DBValue>;
+                if (updateValue === undefined) continue;
+                const docValue = doc[key] as DBValue;
+
+                if (
+                    typeof updateValue === "object" &&
+                    typeof docValue === "object" &&
+                    updateValue !== null &&
+                    docValue !== null
+                ) {
+                    this.updateDoc(docValue, updateValue);
+                } else if (typeof updateValue === "function") {
+                    console.log("updateValue is a function, ", updateValue(docValue));
+                    doc[key] = updateValue(docValue);
+                } else {
+                    doc[key] = updateValue;
+                }
+            }
+        }
+        return doc;
     }
 }

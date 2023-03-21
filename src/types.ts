@@ -23,7 +23,7 @@ export type UpdateQuery<T> = Partial<{
 
 /** Turn ZodSchema ModelDef to actual types using z.infer */
 export type InferModelDef<ModelDef extends Record<string, z.ZodSchema<any>>> = {
-    [K in keyof ModelDef]: z.infer<ModelDef[K]>;
+    [K in keyof ModelDef]: z.infer<ModelDef[K]> & { _id: ObjectId };
 };
 
 export interface DBDocument {
