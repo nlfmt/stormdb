@@ -105,7 +105,7 @@ export default class DBManager<
         if (this.saveTimeout) clearTimeout(this.saveTimeout);
         this.saveTimeout = setTimeout(() => {
             this.$save();
-        }, 1000);
+        }, this.options.saveInterval);
     }
 
     // publicly available methods

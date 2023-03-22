@@ -45,7 +45,10 @@ export type JSONValue =
  * @param transformers A map of class names to their transformers
  */
 export type DBManagerOptions = {
+    /** A list of transformers to use for serializing class instances */
     transformers: Transformer<any, any>[];
+    /** How long to wait for additional changes before saving (milliseconds) */ 
+    saveInterval: number;
 };
 
 export type ToInDoc<D extends Record<string, z.ZodSchema<any>>, M extends keyof D> = {

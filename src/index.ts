@@ -44,7 +44,8 @@ export default function JsonDB<
     path: string,
     models: ModelDef,
     options: DBOptions = {
-        transformers: []
+        transformers: [],
+        saveInterval: 1000
     },
 ) {
     const manager = new DBManager(path, models, options);
