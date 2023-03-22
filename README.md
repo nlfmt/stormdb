@@ -4,8 +4,7 @@ Simple but feature rich JSON database for NodeJS. Supports custom class serializ
 
 ## Quickstart
 1. Install the package `npm install @nlfmt/json-db`
-2. Install zod `npm install zod`
-3. Initialize the database
+2. Initialize the database
 ```ts
 // You can import zod separately, but it's already included
 import JsonDB, { z, $btwn, $regex } from '@nlfmt/json-db';

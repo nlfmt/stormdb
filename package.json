@@ -1,6 +1,6 @@
 {
   "name": "@nlfmt/json-db",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A simple JSON Database with full typesafety and object serialization",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -27,7 +27,7 @@
     "electron"
   ],
   "author": "nlfmt <nlfmt@gmx.de>",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "uuid": "^9.0.0",
     "zod": "^3.21.4"
