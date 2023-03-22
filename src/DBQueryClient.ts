@@ -1,22 +1,18 @@
 import z from "zod";
 import type DBManager from "./DBManager";
 import { ObjectId, deepCompare } from "./utils";
-import { FindQuery, InferModelDef, Predicate, UpdateQuery } from "./types";
+import { FindQuery, NoId, Predicate, ToInDoc, ToOutDoc, UpdateQuery } from "./types";
 
 type QueryPart = Record<string | number | symbol, any>;
 type DocPart = Record<string | number | symbol, any>;
 type DBValue = number | bigint | string | boolean | null | object | undefined;
-type ToDocument<
-    D extends Record<string, z.ZodSchema<any>>,
-    M extends keyof D
-> = InferModelDef<D>[M];
-type NoId<T> = Omit<T, "_id">;
 
 /** A class that handles all queries for a specific model */
 export default class DBQueryClient<
     D extends Record<string, z.ZodSchema<any>>,
     M extends keyof D,
-    Doc extends z.TypeOf<D[M]> & { _id: ObjectId } = ToDocument<D, M>
+    InDoc extends z.input<D[M]> & { _id: ObjectId } = ToInDoc<D, M>,
+    Doc extends z.input<D[M]> & { _id: ObjectId } = ToOutDoc<D, M>
 > {
     /** The name of the model this query client is for */
     private mdl: M;
@@ -38,17 +34,13 @@ export default class DBQueryClient<
      * @param obj The object to insert into the database
      * @returns The inserted document or null if the object is invalid
      */
-    create(obj: NoId<Doc>): Doc | null {
+    create(obj: NoId<InDoc>): Doc {
         // check if the object is valid
-        try {
-            this.schema.parse(obj);
-        } catch (err) {
-            console.error(err);
-            return null;
-        }
+        const res = this.schema.safeParse(obj);
+        if (!res.success) throw res.error
 
         // insert the object
-        const newObj = { ...obj, _id: new ObjectId() } as Doc;
+        const newObj = { ...res.data, _id: new ObjectId() } as Doc;
         this.docs.push(newObj);
 
         // save the database

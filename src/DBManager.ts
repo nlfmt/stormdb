@@ -93,7 +93,6 @@ export default class DBManager<
                     throw new Error(`Invalid data for model ${model}`);
             }
         } catch (e) {
-            console.error(e);
             this.data = {};
             for (const model in this.models) {
                 this.data[model] = [];

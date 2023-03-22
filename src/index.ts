@@ -6,18 +6,18 @@ import { ObjectId, Transformer } from "./utils";
 import type {
     DBDocument,
     DBManagerOptions as DBOptions,
-    InferModelDef,
     JSONValue,
     FindQuery,
     Predicate,
     UpdateFn,
     UpdateQuery,
-    Model
+    Model,
+    ToInDoc,
+    ToOutDoc,
 } from "./types";
 export {
     ObjectId,
     DBDocument,
-    InferModelDef,
     JSONValue,
     Transformer,
     DBOptions as DBManagerOptions,
@@ -25,8 +25,12 @@ export {
     Predicate,
     UpdateFn,
     UpdateQuery,
-    Model
+    Model,
+    ToOutDoc as infer,
+    ToInDoc as inferIn,
+    z
 };
+export * from "./ops";
 
 /**
  * Create a new JsonDB client

@@ -1,4 +1,3 @@
-import { type } from "os";
 import type { ObjectId, Transformer } from "./utils";
 import type z from "zod";
 
@@ -25,11 +24,6 @@ export type UpdateQuery<T> =
       }>
     | UpdateFn<T>;
 
-/** Turn ZodSchema ModelDef to actual types using z.infer */
-export type InferModelDef<ModelDef extends Record<string, z.ZodSchema<any>>> = {
-    [K in keyof ModelDef]: z.infer<ModelDef[K]> & { _id: ObjectId };
-};
-
 export interface DBDocument {
     _id: ObjectId;
     [key: string]: any;
@@ -53,3 +47,13 @@ export type JSONValue =
 export type DBManagerOptions = {
     transformers: Transformer<any, any>[];
 };
+
+export type ToInDoc<D extends Record<string, z.ZodSchema<any>>, M extends keyof D> = {
+    [K in keyof D]: z.input<D[K]> & { _id: ObjectId };
+}[M];
+
+export type ToOutDoc<D extends Record<string, z.ZodSchema<any>>, M extends keyof D> = {
+    [K in keyof D]: z.output<D[K]> & { _id: ObjectId };
+}[M];
+
+export type NoId<T> = Omit<T, "_id">;

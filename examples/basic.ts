@@ -1,13 +1,3 @@
-# JSON DB
-Simple but feature rich JSON database for NodeJS. Supports custom class serialization and deserialization, advanced querying, and more.
-
-
-## Quickstart
-1. Install the package `npm install @nlfmt/json-db`
-2. Install zod `npm install zod`
-3. Initialize the database
-```ts
-// You can import zod separately, but it's already included
 import JsonDB, { z, $btwn, $regex } from '@nlfmt/json-db';
 
 const userModel = z.object({
@@ -56,31 +46,3 @@ db.$ready.then(() => {
 
     db.$disconnect();
 });
-```
-
-## Serializing custom classes
-```ts
-import JsonDB, { Transformer } from '@nlfmt/json-db';
-
-class Test {
-    name: string;
-
-    constructor(name: string) {
-        this.name = name;
-    }
-
-    greet() {
-        console.log(`Hello, my name is ${this.name}`);
-    }
-}
-
-const testTransformer = new Transformer(
-    Test,
-    (test: Test) => ({ name: test.name }),  // Serialize
-    (data: any) => new Test(data.name),     // Deserialize
-);
-
-const db = JsonDb("./db.json", {/* models */}, { transformers: [testTransformer] });
-```
-
-
