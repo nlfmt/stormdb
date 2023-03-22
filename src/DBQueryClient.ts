@@ -3,19 +3,20 @@ import type DBManager from "./DBManager";
 import { ObjectId, deepCompare } from "./utils";
 import { FindQuery, InferModelDef, Predicate, UpdateQuery } from "./types";
 
-
 type QueryPart = Record<string | number | symbol, any>;
 type DocPart = Record<string | number | symbol, any>;
 type DBValue = number | bigint | string | boolean | null | object | undefined;
-type ToDocument<D extends Record<string, z.ZodSchema<any>>, M extends keyof D> = InferModelDef<D>[M];
+type ToDocument<
+    D extends Record<string, z.ZodSchema<any>>,
+    M extends keyof D
+> = InferModelDef<D>[M];
 type NoId<T> = Omit<T, "_id">;
-
 
 /** A class that handles all queries for a specific model */
 export default class DBQueryClient<
     D extends Record<string, z.ZodSchema<any>>,
     M extends keyof D,
-    Doc extends z.TypeOf<D[M]> & { _id: ObjectId; } = ToDocument<D, M>
+    Doc extends z.TypeOf<D[M]> & { _id: ObjectId } = ToDocument<D, M>
 > {
     /** The name of the model this query client is for */
     private mdl: M;
@@ -72,9 +73,7 @@ export default class DBQueryClient<
      * @returns The document if found, null otherwise
      */
     find(where: FindQuery<Doc>): Readonly<Doc> | null {
-        const doc = this.docs.find((d) =>
-            this.matchQuery(d, where)
-        );
+        const doc = this.docs.find((d) => this.matchQuery(d, where));
 
         return doc ?? null;
     }
@@ -85,9 +84,7 @@ export default class DBQueryClient<
      * @returns An array of documents that match the query
      */
     findMany(where: FindQuery<Doc> = {}): Readonly<Doc>[] {
-        const docs = this.docs.filter((d) =>
-            this.matchQuery(d, where)
-        );
+        const docs = this.docs.filter((d) => this.matchQuery(d, where));
 
         return docs ?? [];
     }
@@ -98,20 +95,16 @@ export default class DBQueryClient<
      * @param to The UpdateQuery to update the document with
      * @returns The updated document or null if the document wasn't found
      */
-    updateById(
-        id: ObjectId,
-        to: UpdateQuery<Doc>
-    ): Readonly<Doc> | null {
+    updateById(id: ObjectId, to: UpdateQuery<Doc>): Readonly<Doc> | null {
         const idx = this.docs.findIndex((e) => e._id.equals(id));
         if (!idx || idx === -1) return null;
 
         const doc = this.updateDoc(this.docs[idx], to);
-        
+
         this.db.requestSave();
         return doc ?? null;
     }
 
-    
     /**
      * Update a document in the database
      * @param id The id of the document to update
@@ -119,14 +112,8 @@ export default class DBQueryClient<
      * @returns The updated document or null if the object is invalid
      * or the document was not found
      */
-    update(
-        where: FindQuery<Doc>,
-        to: UpdateQuery<Doc>
-    ): Readonly<Doc> | null {
-        
-        const idx = this.docs.findIndex((e) =>
-            this.matchQuery(e, where)
-        );
+    update(where: FindQuery<Doc>, to: UpdateQuery<Doc>): Readonly<Doc> | null {
+        const idx = this.docs.findIndex((e) => this.matchQuery(e, where));
         if (!idx || idx === -1) return null;
 
         const doc = this.updateDoc(this.docs[idx], to);
@@ -141,13 +128,8 @@ export default class DBQueryClient<
      * @param to The UpdateQuery to update the documents with
      * @returns An array of the updated documents
      */
-    updateMany(
-        where: FindQuery<Doc>,
-        to: UpdateQuery<Doc>
-    ): Readonly<Doc>[] {
-        const docs = this.docs.filter((d) =>
-            this.matchQuery(d, where)
-        );
+    updateMany(where: FindQuery<Doc>, to: UpdateQuery<Doc>): Readonly<Doc>[] {
+        const docs = this.docs.filter((d) => this.matchQuery(d, where));
 
         for (const doc of docs) this.updateDoc(doc, to);
 
@@ -171,9 +153,7 @@ export default class DBQueryClient<
     }
 
     delete(where: FindQuery<Doc>): boolean {
-        const idx = this.docs.findIndex((e) =>
-            this.matchQuery(e, where)
-        );
+        const idx = this.docs.findIndex((e) => this.matchQuery(e, where));
         if (!idx || idx === -1) return false;
 
         this.docs.splice(idx, 1);
@@ -254,16 +234,16 @@ export default class DBQueryClient<
      * @param to The update query to update the document with
      */
     private updateDoc(doc: DocPart, to: UpdateQuery<DocPart>): any {
-        
         /*
-        * Check if to is an update function, if so, replace the doc with the result of the function
-        * otherwise, go through every key in the update query and update the corresponding key in the doc
-        * if the value is an object, recurse
-        */
+         * Check if to is an update function, if so, replace the doc with the result of the function
+         * otherwise, go through every key in the update query and update the corresponding key in the doc
+         * if the value is an object, recurse
+         */
 
         if (typeof to === "function") {
             const newDoc = to(doc);
-            if (newDoc) { // FIXME: probably redundant
+            if (newDoc) {
+                // FIXME: probably redundant
                 for (const key in newDoc) {
                     doc[key] = newDoc[key];
                 }
@@ -282,7 +262,6 @@ export default class DBQueryClient<
                 ) {
                     this.updateDoc(docValue, updateValue);
                 } else if (typeof updateValue === "function") {
-                    console.log("updateValue is a function, ", updateValue(docValue));
                     doc[key] = updateValue(docValue);
                 } else {
                     doc[key] = updateValue;

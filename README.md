@@ -15,7 +15,7 @@ const userModel = z.object({
   age: z.number().optional(),
 });
 
-const db = JsonDb("./db.json", { user: userModel });
+const db = JsonDB("./db.json", { user: userModel });
 
 db.$ready.then(() => {
     // Add a user
@@ -29,7 +29,13 @@ db.$ready.then(() => {
     console.log(users);
 
     // Get a user by id
-    const user = db.user.findOne(usr._id);
+    const user = db.user.findById(usr._id);
+
+    // Advanced querying using a FindQuery
+    const users = db.user.findMany({
+        age: a => a > 18,
+        name: n => n.startsWith("J"),
+    });
 
     // Update a user
     db.user.updateById(usr._id, {
@@ -39,7 +45,9 @@ db.$ready.then(() => {
 
     // Delete a user
     db.user.deleteById(usr._id);
-})
+
+    db.$disconnect();
+});
 ```
 
 ## Serializing custom classes
@@ -64,6 +72,7 @@ const testTransformer = new Transformer(
     (data: any) => new Test(data.name),     // Deserialize
 );
 
-const db = JsonDb("./db.json", {}, { transformers: [testTransformer] });
+const db = JsonDb("./db.json", {/* models */}, { transformers: [testTransformer] });
+```
 
-## Known issues
+

@@ -15,11 +15,11 @@ export class ObjectId {
             } else throw new Error("Invalid ObjectId");
         } else this.id = uuid();
     }
-    
+
     toString() {
         return this.id;
     }
-    
+
     equals(other: ObjectId) {
         return this.id === other.id;
     }
@@ -49,7 +49,11 @@ export class Transformer<O, V extends JSONValue> {
      * @param serialize The function to serialize the object to JSON
      * @param deserialize The function to deserialize the object from JSON
      */
-    constructor(cls: { new (...args: any[]): O }, serialize: (obj: O) => V, deserialize: (obj: V) => O) {
+    constructor(
+        cls: { new (...args: any[]): O },
+        serialize: (obj: O) => V,
+        deserialize: (obj: V) => O
+    ) {
         this.$type = cls.name;
         this.serialize = serialize;
         this.deserialize = deserialize;

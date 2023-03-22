@@ -3,8 +3,30 @@ import DBManager, { PublicDBMembers } from "./DBManager";
 import z from "zod";
 
 import { ObjectId, Transformer } from "./utils";
-import { DBDocument, DBManagerOptions, FindQuery, InferModelDef, JSONValue, Predicate } from "./types";
-export { ObjectId, DBDocument, FindQuery, InferModelDef, JSONValue, Predicate, Transformer, DBManagerOptions };
+import type {
+    DBDocument,
+    DBManagerOptions as DBOptions,
+    InferModelDef,
+    JSONValue,
+    FindQuery,
+    Predicate,
+    UpdateFn,
+    UpdateQuery,
+    Model
+} from "./types";
+export {
+    ObjectId,
+    DBDocument,
+    InferModelDef,
+    JSONValue,
+    Transformer,
+    DBOptions as DBManagerOptions,
+    FindQuery,
+    Predicate,
+    UpdateFn,
+    UpdateQuery,
+    Model
+};
 
 /**
  * Create a new JsonDB client
@@ -13,13 +35,13 @@ export { ObjectId, DBDocument, FindQuery, InferModelDef, JSONValue, Predicate, T
  * @returns A DB Client that can be used to query the database
  */
 export default function JsonDB<
-    ModelDef extends Record<string, z.ZodSchema<any>>
+    ModelDef extends Record<string, Model>
 >(
     path: string,
     models: ModelDef,
-    options: DBManagerOptions = {
+    options: DBOptions = {
         transformers: []
-    }
+    },
 ) {
     const manager = new DBManager(path, models, options);
 

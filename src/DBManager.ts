@@ -6,15 +6,11 @@ import DBQueryClient from "./DBQueryClient";
 
 import { DBDocument, DBManagerOptions, JSONValue } from "./types";
 
-
 type DB = {
     [key: string]: DBDocument[] | undefined;
 };
 
-export type PublicDBMembers = 
-    | "$ready"
-    | "$save"
-    | "$disconnect";
+export type PublicDBMembers = "$ready" | "$save" | "$disconnect";
 
 export default class DBManager<
     ModelDef extends Record<string, z.ZodSchema<any>>
@@ -26,6 +22,10 @@ export default class DBManager<
 
     saveTimeout: NodeJS.Timeout | null = null;
 
+    /**
+     * Promise that resolves when the database is ready to be used \
+     * Data written to the db before this resolves will be lost
+     */
     $ready: Promise<void>;
 
     /** Stores a map of model names to their query clients to
@@ -111,13 +111,20 @@ export default class DBManager<
 
     // publicly available methods
 
-    /** Save the database to disk */
+    /**
+     * Save the database to disk \
+     * You probably dont need to call this, as its is called automatically
+     * when the data changes or the database disconnects, but you can if you want to
+     * make sure the current state is written to disk.
+     */
     async $save() {
         const serialized = JSON.stringify(this.data, this.replacer.bind(this));
         await fs.writeFile(this.path, serialized);
     }
 
-    /** Disconnect from the database and save it to disk */
+    /**
+     * Disconnect from the database and save it to disk
+     */
     async $disconnect() {
         if (this.saveTimeout) clearTimeout(this.saveTimeout);
         await this.$save();
