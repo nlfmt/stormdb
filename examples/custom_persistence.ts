@@ -1,4 +1,4 @@
-import StormDB, { FileSaveLocation, JsonFile, z } from '@nlfmt/stormdb';
+import StormDB, { DBPersistence, FileSaveLocation, JsonFile, SaveLocation, z } from '@nlfmt/stormdb';
 
 const userModel = z.object({
     name: z.string().nonempty(),
@@ -14,3 +14,25 @@ const file = new FileSaveLocation('db.json', {
 });
 const storage = new JsonFile(file);
 const db = StormDB(models, { storage });
+
+// You can define your own DBPersistence class or switch out the SaveLocation of the JsonFile
+class MySaveLocation implements SaveLocation<string> {
+    async save(data: string) {
+        console.log('Saving data:', data);
+    }
+
+    async load() {
+        return '{}';
+    }
+}
+
+// This example class is basically the implementation of the default storage: `Memory`.
+class MyPersistence implements DBPersistence {
+    async read() {
+        return {};
+    }
+
+    async write(data: any) {
+        console.log('Writing data:', data);
+    }
+}
