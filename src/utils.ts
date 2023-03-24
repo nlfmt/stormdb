@@ -1,5 +1,5 @@
-import { v4 as uuid } from "uuid";
 import type { JSONValue } from "./types";
+import { v4 as uuid } from "uuid";
 
 export class ObjectId {
     id: string;
@@ -65,3 +65,28 @@ export const ObjectIdTransformer = new Transformer(
     (obj) => obj.id,
     (obj) => new ObjectId(obj)
 );
+
+export const DateTransformer = new Transformer(
+    Date,
+    (obj) => obj.getTime(),
+    (obj) => new Date(obj)
+);
+
+export const SetTransformer = new Transformer(
+    Set,
+    (obj) => Array.from(obj) as JSONValue[],
+    (obj) => new Set(obj)
+);
+
+export const MapTransformer = new Transformer(
+    Map,
+    (obj) => Array.from(obj.entries()) as [string, JSONValue][],
+    (obj) => new Map(obj)
+);
+
+export const DefaultTransformers = [
+    ObjectIdTransformer,
+    DateTransformer,
+    SetTransformer,
+    MapTransformer,
+];

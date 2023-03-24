@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
       "removeComments": false,
-      "target": "ES2015",
+      "target": "ES2016",
       "module": "CommonJS",
       "lib": ["ES2020"],
       "declaration": true,
@@ -15,14 +15,12 @@
       "strictNullChecks": true,
       "allowSyntheticDefaultImports": true,
       "moduleResolution": "node",
-      "esModuleInterop": true,
-      "forceConsistentCasingInFileNames": true,  /* Disallow inconsistently-cased references to the same file. */
+      "forceConsistentCasingInFileNames": true,
+      "skipLibCheck": true,
+      "noUncheckedIndexedAccess": true,
+      "noEmit": true
     },
     "include": [
       "src/**/*.ts",
     ],
-    "exclude": [
-      "node_modules",
-      "lib"
-    ]
   }
