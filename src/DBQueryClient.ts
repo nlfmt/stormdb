@@ -1,7 +1,7 @@
 import z from "zod";
 import type DBManager from "./DBManager";
 import { ObjectId, deepCompare } from "./utils";
-import { FindQuery, NoId, Predicate, ToInDoc, ToOutDoc, UpdateQuery } from "./types";
+import { FindQuery, Predicate, ToInDoc, ToOutDoc, UpdateQuery } from "./types";
 
 type QueryPart = Record<string | number | symbol, any>;
 type DocPart = Record<string | number | symbol, any>;
@@ -34,7 +34,7 @@ export default class DBQueryClient<
      * @param obj The object to insert into the database
      * @returns The inserted document or null if the object is invalid
      */
-    create(obj: NoId<InDoc>): Doc {
+    create(obj: InDoc): Doc {
         // check if the object is valid
         const res = this.schema.safeParse(obj);
         if (!res.success) throw res.error
@@ -88,10 +88,10 @@ export default class DBQueryClient<
      * @returns The updated document or null if the document wasn't found
      */
     updateById(id: ObjectId, to: UpdateQuery<Doc>): Readonly<Doc> | null {
-        const idx = this.docs.findIndex((e) => e._id.equals(id));
-        if (!idx || idx === -1) return null;
+        let doc = this.docs.find((e) => e._id.equals(id));
+        if (!doc) return null;
 
-        const doc = this.updateDoc(this.docs[idx], to);
+        doc = this.updateDoc(doc, to);
 
         this.db.requestSave();
         return doc ?? null;
@@ -105,10 +105,10 @@ export default class DBQueryClient<
      * or the document was not found
      */
     update(where: FindQuery<Doc>, to: UpdateQuery<Doc>): Readonly<Doc> | null {
-        const idx = this.docs.findIndex((e) => this.matchQuery(e, where));
-        if (!idx || idx === -1) return null;
+        let doc = this.docs.find((e) => this.matchQuery(e, where));
+        if (!doc) return null;
 
-        const doc = this.updateDoc(this.docs[idx], to);
+        doc = this.updateDoc(doc, to);
 
         this.db.requestSave();
         return doc ?? null;

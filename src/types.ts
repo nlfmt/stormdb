@@ -1,4 +1,4 @@
-import type { ObjectId, Transformer } from "./utils";
+import type { ObjectId } from "./utils";
 import type z from "zod";
 
 export type Predicate<T> = (value: T) => boolean;
@@ -40,20 +40,22 @@ export type JSONValue =
     | JSONValue[]
     | { [key: string]: JSONValue };
 
-/**
- * Options for the DBManager
- * @param transformers A map of class names to their transformers
- */
-export type DBManagerOptions = {
-    transformers: Transformer<any, any>[];
-};
+    export type NoId<T> = Omit<T, "_id">;
+export type WithId<T> = T & { _id: ObjectId };
+
+/** Infers the type you need to input when creating a document of model type T */
+export type inferIn<T extends z.ZodSchema<any>> = z.input<T>;
+/** Infers the type you get when querying a document of model type T */
+export type inferOut<T extends z.ZodSchema<any>> = WithId<z.output<T>>;
 
 export type ToInDoc<D extends Record<string, z.ZodSchema<any>>, M extends keyof D> = {
-    [K in keyof D]: z.input<D[K]> & { _id: ObjectId };
+    [K in keyof D]: inferIn<D[K]>;
 }[M];
 
 export type ToOutDoc<D extends Record<string, z.ZodSchema<any>>, M extends keyof D> = {
-    [K in keyof D]: z.output<D[K]> & { _id: ObjectId };
+    [K in keyof D]: inferOut<D[K]>;
 }[M];
 
-export type NoId<T> = Omit<T, "_id">;
+export type DB = {
+    [key: string]: DBDocument[] | undefined;
+};

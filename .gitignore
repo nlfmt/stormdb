@@ -1,12 +1,7 @@
 node_modules
 
 # generated code
-lib
-
-# lockfiles
-pnpm-lock.yaml
-package-lock.json
-yarn.lock
+dist
 
 # logs
 logs

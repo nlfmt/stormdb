@@ -1,24 +1,29 @@
-import { promises as fs, constants as fsConstants } from "fs";
 import z from "zod";
 
-import { ObjectIdTransformer } from "./utils";
 import DBQueryClient from "./DBQueryClient";
 
-import { DBDocument, DBManagerOptions, JSONValue } from "./types";
-
-type DB = {
-    [key: string]: DBDocument[] | undefined;
-};
+import { DBPersistence, JsonFile, Memory } from "./persistence";
+import { DB } from "./types";
 
 export type PublicDBMembers = "$ready" | "$save" | "$disconnect";
+
+/**
+ * Options for the DBManager
+ * @param transformers A map of class names to their transformers
+ */
+export type DBOptions = {
+    /** How long to wait for additional changes before saving (milliseconds) */ 
+    saveInterval: number;
+    /** The persistence layer to use */
+    storage: DBPersistence | string;
+};
 
 export default class DBManager<
     ModelDef extends Record<string, z.ZodSchema<any>>
 > {
-    path: string;
     data: DB = {};
     models: ModelDef;
-    options: DBManagerOptions;
+    options: { saveInterval: number; storage: DBPersistence };
 
     saveTimeout: NodeJS.Timeout | null = null;
 
@@ -33,13 +38,18 @@ export default class DBManager<
     queryClients: Map<keyof ModelDef, DBQueryClient<ModelDef, keyof ModelDef>> =
         new Map();
 
-    constructor(path: string, models: ModelDef, options: DBManagerOptions) {
-        this.path = path;
+    constructor(models: ModelDef, options?: Partial<DBOptions>) {
         this.models = models;
-        this.options = options;
-        this.options.transformers.push(ObjectIdTransformer);
+        this.options = {
+            saveInterval: options?.saveInterval ?? 1000,
+            storage: options?.storage
+                ? typeof options.storage === "string"
+                    ? new JsonFile(options.storage)
+                    : options.storage
+                : new Memory()
+        };
 
-        this.$ready = this.loadFromFile();
+        this.$ready = this.init();
     }
 
     getQueryClient(model: string) {
@@ -48,82 +58,36 @@ export default class DBManager<
         return this.queryClients.get(model);
     }
 
-    /** Reviver function for JSON.parse */
-    private reviver(k: any, value: JSONValue): any {
-        if (typeof value !== "object" || !value || Array.isArray(value))
-            return value;
-        if (!("$oid" in value && "$ov" in value)) return value;
-
-        const transformer = this.options.transformers.find(
-            (tr) => tr.$type === value.$oid
-        );
-        if (!transformer) return value;
-
-        return transformer.deserialize(value.$ov);
-    }
-
-    /** Replacer function for JSON.stringify */
-    private replacer(k: any, value: any): any {
-        if (typeof value !== "object" || !value) return value;
-        const transformer = this.options.transformers.find(
-            (tr) => value.constructor?.name === tr.$type
-        );
-
-        if (!transformer) return value;
-
-        return {
-            $oid: transformer.$type,
-            $ov: transformer.serialize(value)
-        };
-    }
-
-    private async loadFromFile() {
-        try {
-            await fs.access(this.path, fsConstants.R_OK | fsConstants.W_OK);
-            this.data = JSON.parse(
-                await fs.readFile(this.path, "utf-8"),
-                this.reviver.bind(this)
-            ) as DB;
-
-            // Validate the data
-            for (const model in this.models) {
-                const modelSchema = this.models[model];
-                const modelData = this.data[model];
-                if (!modelData || !Array.isArray(modelData))
-                    throw new Error(`Invalid data for model ${model}`);
-            }
-        } catch (e) {
-            this.data = {};
-            for (const model in this.models) {
-                this.data[model] = [];
-            }
-            await this.$save();
+    private async init() {
+        this.data = await this.options.storage.read();
+        for (const model of Object.keys(this.models)) {
+            if (model in this.data) continue;
+            this.data[model] = [];
+            this.requestSave();
         }
+
     }
 
     requestSave() {
         if (this.saveTimeout) clearTimeout(this.saveTimeout);
         this.saveTimeout = setTimeout(() => {
             this.$save();
-        }, 1000);
+        }, this.options.saveInterval);
     }
 
     // publicly available methods
 
     /**
-     * Save the database to disk \
+     * Save the database to the persistence layer \
      * You probably dont need to call this, as its is called automatically
      * when the data changes or the database disconnects, but you can if you want to
-     * make sure the current state is written to disk.
+     * make sure the current state is persisted
      */
     async $save() {
-        const serialized = JSON.stringify(this.data, this.replacer.bind(this));
-        await fs.writeFile(this.path, serialized);
+        await this.options.storage.write(this.data);
     }
 
-    /**
-     * Disconnect from the database and save it to disk
-     */
+    /** Disconnect from the database and save it to the persistence implementation */
     async $disconnect() {
         if (this.saveTimeout) clearTimeout(this.saveTimeout);
         await this.$save();
