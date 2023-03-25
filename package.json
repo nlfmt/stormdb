@@ -1,6 +1,6 @@
 {
   "name": "@nlfmt/stormdb",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A simple typesafe JSON ORM Database with advanced querying and object serialization. Supports NodeJS and Electron",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
