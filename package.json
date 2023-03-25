@@ -41,5 +41,9 @@
     "@types/uuid": "^9.0.1",
     "tsup": "^6.7.0",
     "typescript": "^5.0.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
