@@ -1,5 +1,11 @@
 # @nlfmt/stormdb
 
+## 0.1.2
+
+### Patch Changes
+
+- 8aeab1b: fix wrong files field in package.json and move public access to config file
+
 ## 0.1.1
 
 ### Patch Changes
