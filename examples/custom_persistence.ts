@@ -16,6 +16,7 @@ const storage = new JsonFile(file);
 const db = StormDB(models, { storage });
 
 // You can define your own DBPersistence class or switch out the SaveLocation of the JsonFile
+// A custom SaveLocation could also be used to encrypt the data before saving it to the file
 class MySaveLocation implements SaveLocation<string> {
     async save(data: string) {
         console.log('Saving data:', data);
@@ -25,6 +26,9 @@ class MySaveLocation implements SaveLocation<string> {
         return '{}';
     }
 }
+
+const storage2 = new JsonFile(new MySaveLocation());
+const db2 = StormDB(models, { storage: storage2 });
 
 // This example class is basically the implementation of the default storage: `Memory`.
 class MyPersistence implements DBPersistence {
@@ -36,3 +40,5 @@ class MyPersistence implements DBPersistence {
         console.log('Writing data:', data);
     }
 }
+
+const db3 = StormDB(models, { storage: new MyPersistence() });

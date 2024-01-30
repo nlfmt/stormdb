@@ -83,10 +83,15 @@ export const MapTransformer = new Transformer(
     (obj) => Array.from(obj.entries()) as [string, JSONValue][],
     (obj) => new Map(obj)
 );
+export const BufferTransformer = new Transformer(
+    Buffer,
+    (obj) => obj.toString("base64"),
+    (obj) => Buffer.from(obj, "base64")
+);
 
 export const DefaultTransformers = [
-    ObjectIdTransformer,
     DateTransformer,
     SetTransformer,
     MapTransformer,
+    BufferTransformer,
 ];

@@ -5,7 +5,8 @@ import DBQueryClient from "./DBQueryClient";
 import { DBPersistence, JsonFile, Memory } from "./persistence";
 import { DB } from "./types";
 
-export type PublicDBMembers = "$ready" | "$save" | "$disconnect";
+type StartsWith<T extends string, Start extends string> = T extends `${Start}${string}` ? T : never;
+export type PublicDBMembers = StartsWith<keyof DBManager<any>, "$">;
 
 /**
  * Options for the DBManager
@@ -79,7 +80,7 @@ export default class DBManager<
 
     /**
      * Save the database to the persistence layer \
-     * You probably dont need to call this, as its is called automatically
+     * You probably dont need to call this, as it is called automatically
      * when the data changes or the database disconnects, but you can if you want to
      * make sure the current state is persisted
      */

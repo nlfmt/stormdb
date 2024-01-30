@@ -6,13 +6,14 @@ import { FindQuery, Predicate, ToInDoc, ToOutDoc, UpdateQuery } from "./types";
 type QueryPart = Record<string | number | symbol, any>;
 type DocPart = Record<string | number | symbol, any>;
 type DBValue = number | bigint | string | boolean | null | object | undefined;
+type Flatten<T> = T extends object ? { [K in keyof T]: T[K] } : T;
 
 /** A class that handles all queries for a specific model */
 export default class DBQueryClient<
     D extends Record<string, z.ZodSchema<any>>,
     M extends keyof D,
-    InDoc extends z.input<D[M]> & { _id: ObjectId } = ToInDoc<D, M>,
-    Doc extends z.input<D[M]> & { _id: ObjectId } = ToOutDoc<D, M>
+    InDoc extends z.input<D[M]> & { _id: ObjectId } = Flatten<ToInDoc<D, M>>,
+    Doc extends z.input<D[M]> & { _id: ObjectId } = Flatten<ToOutDoc<D, M>>
 > {
     /** The name of the model this query client is for */
     private mdl: M;
@@ -34,7 +35,8 @@ export default class DBQueryClient<
      * @param obj The object to insert into the database
      * @returns The inserted document or null if the object is invalid
      */
-    create(obj: InDoc): Doc {
+    async create(obj: InDoc): Promise<Flatten<Doc>> {
+        await this.db.$ready;
         // check if the object is valid
         const res = this.schema.safeParse(obj);
         if (!res.success) throw res.error
@@ -54,7 +56,8 @@ export default class DBQueryClient<
      * @param id The id of the document to find
      * @returns The document if found, null otherwise
      */
-    findById(id: ObjectId): Readonly<Doc> | null {
+    async findById(id: ObjectId): Promise<Readonly<Doc> | null> {
+        await this.db.$ready;
         const doc = this.docs.find((e) => e._id.equals(id));
         return doc ?? null;
     }
@@ -64,9 +67,9 @@ export default class DBQueryClient<
      * @param query The query to find the document by
      * @returns The document if found, null otherwise
      */
-    find(where: FindQuery<Doc>): Readonly<Doc> | null {
+    async find(where: FindQuery<Doc>): Promise<Readonly<Doc> | null> {
+        await this.db.$ready;
         const doc = this.docs.find((d) => this.matchQuery(d, where));
-
         return doc ?? null;
     }
 
@@ -75,9 +78,8 @@ export default class DBQueryClient<
      * @param query The query to find the documents by
      * @returns An array of documents that match the query
      */
-    findMany(where: FindQuery<Doc> = {}): Readonly<Doc>[] {
+    async findMany(where: FindQuery<Doc> = {}): Promise<Readonly<Doc>[]> {
         const docs = this.docs.filter((d) => this.matchQuery(d, where));
-
         return docs ?? [];
     }
 
@@ -87,7 +89,7 @@ export default class DBQueryClient<
      * @param to The UpdateQuery to update the document with
      * @returns The updated document or null if the document wasn't found
      */
-    updateById(id: ObjectId, to: UpdateQuery<Doc>): Readonly<Doc> | null {
+    async updateById(id: ObjectId, to: UpdateQuery<Doc>): Promise<Readonly<Doc> | null> {
         let doc = this.docs.find((e) => e._id.equals(id));
         if (!doc) return null;
 
@@ -104,7 +106,7 @@ export default class DBQueryClient<
      * @returns The updated document or null if the object is invalid
      * or the document was not found
      */
-    update(where: FindQuery<Doc>, to: UpdateQuery<Doc>): Readonly<Doc> | null {
+    async update(where: FindQuery<Doc>, to: UpdateQuery<Doc>): Promise<Readonly<Doc> | null> {
         let doc = this.docs.find((e) => this.matchQuery(e, where));
         if (!doc) return null;
 
@@ -120,7 +122,7 @@ export default class DBQueryClient<
      * @param to The UpdateQuery to update the documents with
      * @returns An array of the updated documents
      */
-    updateMany(where: FindQuery<Doc>, to: UpdateQuery<Doc>): Readonly<Doc>[] {
+    async updateMany(where: FindQuery<Doc>, to: UpdateQuery<Doc>): Promise<Readonly<Doc>[]> {
         const docs = this.docs.filter((d) => this.matchQuery(d, where));
 
         for (const doc of docs) this.updateDoc(doc, to);
@@ -134,7 +136,7 @@ export default class DBQueryClient<
      * @param id The id of the document to delete
      * @returns True if the document was deleted, false otherwise
      */
-    deleteById(id: ObjectId): boolean {
+    async deleteById(id: ObjectId): Promise<boolean> {
         const idx = this.docs.findIndex((e) => e._id.equals(id));
         if (!idx || idx === -1) return false;
 
@@ -144,7 +146,7 @@ export default class DBQueryClient<
         return true;
     }
 
-    delete(where: FindQuery<Doc>): boolean {
+    async delete(where: FindQuery<Doc>): Promise<boolean> {
         const idx = this.docs.findIndex((e) => this.matchQuery(e, where));
         if (!idx || idx === -1) return false;
 
@@ -159,7 +161,7 @@ export default class DBQueryClient<
      * @param where The query to find the documents to delete
      * @returns The number of documents deleted
      */
-    deleteMany(where: FindQuery<Doc> = {}): number {
+    async deleteMany(where: FindQuery<Doc> = {}): Promise<number> {
         const idxs = this.docs.reduce<number[]>((acc, e, i) => {
             if (this.matchQuery(e, where)) acc.push(i);
             return acc;

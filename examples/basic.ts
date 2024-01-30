@@ -11,42 +11,44 @@ const db = StormDB({ user: userModel }, {
     storage: "db.json"
 });
 
-db.$ready.then(() => {
+async function main() {
     // Add a user
-    const usr: User = db.user.create({
+    const usr = await db.user.create({
         name: "John",
         age: 20,
     });
 
     // Get all users
-    let users = db.user.findMany();
+    let users = await db.user.findMany();
     console.log(users);
 
     // Get a user by id
     const user = db.user.findById(usr._id);
 
     // Advanced querying using a FindQuery
-    users = db.user.findMany({
+    users = await db.user.findMany({
         age: a => a > 18,
         name: n => n.startsWith("J"),
         hobbies: $contains("coding"),
     });
 
     // Using builtin query functions
-    users = db.user.findMany({
+    users = await db.user.findMany({
         age: $btwn(18, 21),
         name: $regex(/^J/),
     });
 
     // Update a user
-    db.user.updateById(usr._id, {
+    await db.user.updateById(usr._id, {
         age: 21,
         name: oldName => oldName + " Doe",
         hobbies: $push("coding"),
     });
 
     // Delete a user
-    console.log(db.user.deleteById(usr._id));
+    console.log(await db.user.deleteById(usr._id));
 
-    db.$disconnect();
-});
+    await db.$disconnect();
+}
+
+main();

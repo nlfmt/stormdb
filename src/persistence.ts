@@ -1,5 +1,5 @@
 import { accessSync, constants, promises as fs } from "fs";
-import { DefaultTransformers, Transformer } from "./utils";
+import { DefaultTransformers, ObjectId, Transformer } from "./utils";
 import { DB, JSONValue } from "./types";
 
 /** Represents an implementation to persist the DB data */
@@ -98,6 +98,8 @@ export class JsonFile implements DBPersistence {
 
     /** Reviver function for JSON.parse */
     private reviver(k: any, value: JSONValue): any {
+        if (k === "_id" && typeof value === "string") return new ObjectId(value);
+
         if (typeof value !== "object" || !value || Array.isArray(value))
             return value;
         if (!("$oid" in value && "$ov" in value)) return value;
@@ -111,7 +113,9 @@ export class JsonFile implements DBPersistence {
     }
 
     /** Replacer function for JSON.stringify */
-    private replacer(k: any, value: any): any {
+    private replacer(k: any, value: unknown): any {
+        if (k === "_id" && value instanceof ObjectId) return value.toString();
+        
         if (typeof value !== "object" || !value) return value;
         const transformer = this.options.transformers.find(
             (tr) => value.constructor?.name === tr.$type
