@@ -3,9 +3,8 @@ import z from "zod";
 import DBQueryClient from "./DBQueryClient";
 
 import { DBPersistence, JsonFile, Memory } from "./persistence";
-import { DB } from "./types";
+import type { DB, StartsWith } from "./types";
 
-type StartsWith<T extends string, Start extends string> = T extends `${Start}${string}` ? T : never;
 export type PublicDBMembers = StartsWith<keyof DBManager<any>, "$">;
 
 /**
@@ -42,7 +41,7 @@ export default class DBManager<
     constructor(models: ModelDef, options?: Partial<DBOptions>) {
         this.models = models;
         this.options = {
-            saveInterval: options?.saveInterval ?? 1000,
+            saveInterval: options?.saveInterval ?? 1000 * 60,
             storage: options?.storage
                 ? typeof options.storage === "string"
                     ? new JsonFile(options.storage)
@@ -63,7 +62,7 @@ export default class DBManager<
         this.data = await this.options.storage.read();
         for (const model of Object.keys(this.models)) {
             if (model in this.data) continue;
-            this.data[model] = [];
+            this.data[model] = {};
             this.requestSave();
         }
 

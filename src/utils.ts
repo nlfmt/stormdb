@@ -1,19 +1,10 @@
+import { randomBytes } from "crypto";
 import type { JSONValue } from "./types";
-import { v4 as uuid } from "uuid";
 
 export class ObjectId {
     id: string;
     constructor(id?: string) {
-        if (id) {
-            // Test if the string is a valid uuid
-            if (
-                /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-                    id
-                )
-            ) {
-                this.id = id;
-            } else throw new Error("Invalid ObjectId");
-        } else this.id = uuid();
+        this.id = id ?? randomBytes(8).toString("hex")
     }
 
     toString() {
@@ -31,9 +22,8 @@ export class ObjectId {
  * @param b
  * @returns True if the values are equal, false otherwise
  */
-export function deepCompare(a: any, b: any): boolean {
-    // TODO: change this to recursive compare?
-    if (a === b) return true;
+export function deepCompare(a: unknown, b: unknown): boolean {
+    if (!(typeof a === "object" && typeof b === "object")) return a === b;
     return JSON.stringify(a) === JSON.stringify(b);
 }
 
@@ -93,5 +83,5 @@ export const DefaultTransformers = [
     DateTransformer,
     SetTransformer,
     MapTransformer,
-    BufferTransformer,
+    BufferTransformer
 ];

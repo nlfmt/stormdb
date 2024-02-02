@@ -1,6 +1,13 @@
 import type { ObjectId } from "./utils";
 import type z from "zod";
 
+export type Flatten<T> = T extends object ? { [K in keyof T]: T[K] } : T;
+export type StartsWith<
+    T extends string,
+    Start extends string
+> = T extends `${Start}${string}` ? T : never;
+
+
 export type Predicate<T> = (value: T) => boolean;
 
 /** Convert a model type to a query type, so arrays can be queried with $contains and $is */
@@ -57,5 +64,5 @@ export type ToOutDoc<D extends Record<string, z.ZodSchema<any>>, M extends keyof
 }[M];
 
 export type DB = {
-    [key: string]: DBDocument[] | undefined;
+    [key: string]: Record<string, DBDocument> | undefined;
 };

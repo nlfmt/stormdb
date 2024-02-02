@@ -98,18 +98,16 @@ export class JsonFile implements DBPersistence {
 
     /** Reviver function for JSON.parse */
     private reviver(k: any, value: JSONValue): any {
-        if (k === "_id" && typeof value === "string") return new ObjectId(value);
-
         if (typeof value !== "object" || !value || Array.isArray(value))
             return value;
-        if (!("$oid" in value && "$ov" in value)) return value;
+        if (!("$t" in value && "$v" in value)) return value;
 
         const transformer = this.options.transformers.find(
-            (tr) => tr.$type === value.$oid
+            (tr) => tr.$type === value.$t
         );
         if (!transformer) return value;
 
-        return transformer.deserialize(value.$ov);
+        return transformer.deserialize(value.$v);
     }
 
     /** Replacer function for JSON.stringify */
@@ -124,8 +122,8 @@ export class JsonFile implements DBPersistence {
         if (!transformer) return value;
 
         return {
-            $oid: transformer.$type,
-            $ov: transformer.serialize(value)
+            $t: transformer.$type,
+            $v: transformer.serialize(value)
         };
     }
 }
