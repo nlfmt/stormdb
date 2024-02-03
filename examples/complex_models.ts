@@ -1,4 +1,5 @@
-import StormDB, { DocType, z } from '@nlfmt/stormdb';
+import StormDB, { DocType } from '@nlfmt/stormdb';
+import { z } from 'zod';
 
 const userModel = z.object({
     name: z.string().default("new user"),

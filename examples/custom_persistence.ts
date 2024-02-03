@@ -1,7 +1,8 @@
-import StormDB, { DBPersistence, FileSaveLocation, JsonFile, SaveLocation, z } from '@nlfmt/stormdb';
+import StormDB, { DBPersistence, FileSaveLocation, JsonFile, SaveLocation } from '@nlfmt/stormdb';
+import { z } from 'zod';
 
 const userModel = z.object({
-    name: z.string().nonempty(),
+    name: z.string().min(1),
     age: z.number(),
     hobbies: z.array(z.string()).optional().default([]),
 });

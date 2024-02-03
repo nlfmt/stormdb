@@ -1,4 +1,5 @@
-import StormDB, { DefaultTransformers, JsonFile, Transformer, z } from "@nlfmt/stormdb";
+import StormDB, { DefaultTransformers, JsonFile, Transformer } from "@nlfmt/stormdb";
+import { z } from "zod";
 
 // a custom class that needs to be serialized
 class SomeClass {

@@ -1,7 +1,8 @@
-import StormDB, { z, $btwn, $regex, DocType, $contains, $push } from '@nlfmt/stormdb';
+import StormDB, { $btwn, $regex, DocType, $contains, $push } from '@nlfmt/stormdb';
+import { z } from 'zod';
 
 const userModel = z.object({
-  name: z.string().nonempty(),
+  name: z.string().min(1),
   age: z.number(),
   hobbies: z.array(z.string()).optional().default([]),
 });

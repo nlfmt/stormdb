@@ -14,7 +14,6 @@ import {
 export * from "./utils";
 export * from "./ops";
 export {
-    z,
     DB, DBOptions, DBDocument, Model,
     UpdateFn, UpdateQuery, FindQuery,
     Predicate,
