@@ -14,8 +14,11 @@ it doesnt do any querying optimizations, like indexing.
 
 
 ## Quickstart
-1. Install necessary packages `npm install @nlfmt/stormdb zod`
-2. Initialize the database
+1. Install StormDB `npm install @nlfmt/stormdb`
+2. Install packages for you validation library, here are some examples:
+   - `npm install zod @typeschema/zod`
+   - `npm install valibot @typeschema/valibot`
+3. Initialize the database
 ```ts
 import StormDB from '@nlfmt/stormdb';
 import { z } from 'zod';
@@ -27,7 +30,7 @@ const userModel = z.object({
 
 const db = StormDB({ user: userModel }, { storage: "db.json" });
 ```
-3. Use the querying API
+4. Use the querying API
 ```ts
 // Add a user
 let usr = await db.user.create({ name: "John", age: 20 });

@@ -4,14 +4,27 @@ import StormDB, {
   DocType,
   $contains,
   $push,
+  InDocType,
 } from "@nlfmt/stormdb"
-import { z } from "zod"
 
-const userModel = z.object({
-  name: z.string().min(1),
-  age: z.number(),
-  hobbies: z.array(z.string()).optional().default([]),
+// example using valibot
+import * as v from "valibot"
+
+const userModel = v.object({
+  name: v.pipe(v.string(), v.minLength(1)),
+  age: v.number(),
+  hobbies: v.optional(v.array(v.string()), [])
 })
+
+// same example using zod, comment out the above import and uncomment this one to use
+// import { z } from "zod"
+
+// const userModel = z.object({
+//   name: z.string().min(1),
+//   age: z.number(),
+//   hobbies: z.array(z.string()).optional().default([]),
+// })
+
 type User = DocType<typeof userModel>
 
 const db = StormDB(

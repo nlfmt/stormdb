@@ -1,4 +1,4 @@
-import z from "zod"
+import { Schema } from "@typeschema/main"
 import DBQueryClient from "./DBQueryClient"
 import { DBPersistence, JsonFile, Memory } from "./persistence"
 import type { DB, StartsWith } from "./types"
@@ -17,7 +17,7 @@ export type DBOptions = {
 }
 
 export default class DBManager<
-  ModelDef extends Record<string, z.ZodSchema<any>>
+  ModelDef extends Record<string, Schema>
 > {
   data: DB = {}
   models: ModelDef
@@ -50,7 +50,7 @@ export default class DBManager<
     this.$ready = this.init()
   }
 
-  getQueryClient(model: string) {
+  getQueryClient(model: string): DBQueryClient<ModelDef, keyof ModelDef> | undefined {
     if (!this.queryClients.has(model))
       this.queryClients.set(model, new DBQueryClient(this, model))
     return this.queryClients.get(model)
