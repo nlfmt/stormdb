@@ -1,6 +1,5 @@
 import DBManager, { PublicDBMembers, DBOptions } from "./DBManager"
 import DBQueryClient from "./DBQueryClient"
-import z from "zod"
 
 export * from "./persistence"
 import {
@@ -35,6 +34,10 @@ export {
   inferIn as InDocType,
 }
 
+type StormDB<ModelDef extends Record<string, Model>> = {
+  [K in keyof ModelDef]: DBQueryClient<ModelDef, K>
+} & Pick<DBManager<ModelDef>, PublicDBMembers>
+
 /**
  * Create a new StormDB client
  * @param path The path to the database file
@@ -44,7 +47,7 @@ export {
 export default function StormDB<ModelDef extends Record<string, Model>>(
   models: ModelDef,
   options?: Partial<DBOptions>
-) {
+): StormDB<ModelDef>{
   const manager = new DBManager(models, options)
 
   // Using a proxy we can map model names to query clients

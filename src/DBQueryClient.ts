@@ -1,4 +1,3 @@
-import z from "zod"
 import type DBManager from "./DBManager"
 import { ObjectId, deepCompare } from "./utils"
 import type {
@@ -8,6 +7,7 @@ import type {
   UpdateQuery,
   WithId,
 } from "./types"
+import { Infer, InferIn, Schema, validate } from "@typeschema/main"
 
 type QueryPart = Record<string | number | symbol, any>
 type DocPart = Record<string | number | symbol, any>
@@ -15,10 +15,10 @@ type DBValue = number | bigint | string | boolean | null | object | undefined
 
 /** A class that handles all queries for a specific model */
 export default class DBQueryClient<
-  D extends Record<string, z.ZodSchema<any>>,
+  D extends Record<string, Schema>,
   M extends keyof D,
-  InDoc extends z.input<D[M]> = Flatten<z.input<D[M]>>,
-  _Doc extends z.output<D[M]> = Flatten<z.output<D[M]>>,
+  InDoc extends InferIn<D[M]> = Flatten<InferIn<D[M]>>,
+  _Doc extends Infer<D[M]> = Flatten<Infer<D[M]>>,
   Doc = Flatten<WithId<_Doc>>
 > {
   /** The name of the model this query client is for */
@@ -44,8 +44,8 @@ export default class DBQueryClient<
   async create(obj: InDoc): Promise<Doc> {
     await this.db.$ready
     // check if the object is valid
-    const res = this.schema.safeParse(obj)
-    if (!res.success) throw res.error
+    const res = await validate(this.schema, obj)
+    if (!res.success) throw res.issues
 
     // insert the object
     const id = new ObjectId()
@@ -195,7 +195,7 @@ export default class DBQueryClient<
   }
 
   private getDoc(id: string): Doc | null {
-    const doc = structuredClone(this.docs[id])
+    const doc = structuredClone(this.docs[id]) as any
     if (!doc) return null
     doc._id = new ObjectId(id)
     return doc
@@ -288,8 +288,8 @@ export default class DBQueryClient<
         const docValue = doc[key] as DBValue
 
         if (
-          typeof updateValue === "object" &&
-          typeof docValue === "object" &&
+          (typeof updateValue === "object" && !Array.isArray(updateValue)) &&
+          (typeof docValue === "object" && !Array.isArray(docValue)) &&
           updateValue !== null &&
           docValue !== null
         ) {

@@ -1,5 +1,5 @@
 import { accessSync, constants, promises as fs } from "fs"
-import { DefaultTransformers, ObjectId, Transformer } from "./utils"
+import { DefaultTransformers, Transformer } from "./utils"
 import { DB, JSONValue } from "./types"
 
 /** Represents an implementation to persist the DB data */

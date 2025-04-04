@@ -32,12 +32,18 @@
   "author": "nlfmt <nlfmt@gmx.de>",
   "license": "MIT",
   "dependencies": {
-    "zod": "^3.22.4"
+    "@typeschema/main": "^0.14.1"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
+    "@nlfmt/stormdb": "link:",
     "@types/node": "^20.11.16",
+    "@typeschema/valibot": "^0.14.0",
+    "@typeschema/zod": "^0.14.0",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.3"
-  }
+    "typescript": "^5.3.3",
+    "valibot": "1.0.0-beta.15",
+    "zod": "^3.24.1"
+  },
+  "packageManager": "pnpm@10.2.0+sha512.0d27364e0139c6aadeed65ada153135e0ca96c8da42123bd50047f961339dc7a758fc2e944b428f52be570d1bd3372455c1c65fa2e7aa0bfbf931190f9552001"
 }

@@ -1,5 +1,5 @@
+import { Infer, InferIn, Schema } from "@typeschema/main"
 import type { ObjectId } from "./utils"
-import type z from "zod"
 
 export type Flatten<T> = T extends object ? { [K in keyof T]: T[K] } : T
 export type StartsWith<
@@ -33,7 +33,7 @@ export interface DBDocument {
   [key: string]: any
 }
 
-export type Model = z.ZodSchema<any>
+export type Model = Schema
 
 /** Represents a value that can be serialized to JSON by default */
 export type JSONValue =
@@ -44,23 +44,23 @@ export type JSONValue =
   | JSONValue[]
   | { [key: string]: JSONValue }
 
-export type NoId<T> = Omit<T, "_id">
-export type WithId<T> = T & { _id: ObjectId }
+export type NoId<T> = Flatten<Omit<T, "_id">>
+export type WithId<T> = Flatten<T & { _id: ObjectId }>
 
 /** Infers the type you need to input when creating a document of model type T */
-export type inferIn<T extends z.ZodSchema<any>> = z.input<T>
+export type inferIn<T extends Schema> = InferIn<T>
 /** Infers the type you get when querying a document of model type T */
-export type inferOut<T extends z.ZodSchema<any>> = WithId<z.output<T>>
+export type inferOut<T extends Schema> = WithId<Infer<T>>
 
 export type ToInDoc<
-  D extends Record<string, z.ZodSchema<any>>,
+  D extends Record<string, Schema>,
   M extends keyof D
 > = {
   [K in keyof D]: inferIn<D[K]>
 }[M]
 
 export type ToOutDoc<
-  D extends Record<string, z.ZodSchema<any>>,
+  D extends Record<string, Schema>,
   M extends keyof D
 > = {
   [K in keyof D]: inferOut<D[K]>
