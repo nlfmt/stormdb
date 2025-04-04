@@ -1,5 +1,13 @@
 # @nlfmt/stormdb
 
+## 2.0.0
+
+### Major Changes
+
+- 366e2b7: Allow multiple validation libraries using typeschema
+
+  This release adds the capabilities to use any validation library to define schemas in StormDB with the help of the typeschema library, an abstraction over the most common validation libraries
+
 ## 1.0.0
 
 ### Major Changes
